@@ -187,3 +187,28 @@ futtop/*
 
 *.mat
 *experimental*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.env/
+.conda/
+conda/
+pip-wheel-metadata/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
