@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# === GA + BFGS refinement → final_submission.npy (improved) ===
+
 import os
 os.environ["JAX_PLATFORMS"] = "cpu"
 
@@ -43,7 +42,7 @@ DIFF_TOOLS    = DifferentiableTools(device='cpu'); DIFF_TOOLS.compile()
 
 
 # -------------------------------------------------------------------
-# GA problem (matches teammate’s set-up)
+# GA problem 
 # -------------------------------------------------------------------
 class AdvancedMechanismOptimization(ElementwiseProblem):
     def __init__(self, target_curve, N=5):
@@ -167,7 +166,7 @@ def run_ga_for_curve(curve_idx, target_curve, init_pop):
 
 
 # -------------------------------------------------------------------
-# BFGS refinement (with symmetric cap penalties + validity filtering)
+# BFGS refinement 
 # -------------------------------------------------------------------
 np.random.seed(0)  # for refinement jitters
 
@@ -269,9 +268,7 @@ def refine_member_once(xi, Ei, FJi, Mi, Ti, tgt_curve, wd, wm):
 # -------------------------------------------------------------------
 # Driver: GA → BFGS refinement → select valid & best → save final_submission.npy
 # -------------------------------------------------------------------
-print("\n============================")
-print(" GA + BFGS REFINEMENT START ")
-print("============================")
+
 
 init_pop = generate_diverse_initial_population(200)
 submission = make_empty_submission()
@@ -340,10 +337,6 @@ out_path = 'submission.npy'
 np.save(out_path, submission)
 print(f"\nSaved refined submission to: {out_path}")
 
-print("\nEvaluating final submission...")
-try:
-    evaluate_submission(submission)
-except Exception as e:
-    print("evaluate_submission raised an exception:", e)
 
-print("\n✅ Done.")
+
+
