@@ -22,15 +22,13 @@ from LINKS.Optimization import Tools, DifferentiableTools, MechanismRandomizer
 
 
 
+target_curves = np.load("target_curves.npy")
 
+PROBLEM_TOOLS = Tools(device='cpu');               
+PROBLEM_TOOLS.compile()
 
-TARGET_CURVES_PATH = "target_curves.npy"
-if not os.path.exists(TARGET_CURVES_PATH):
-    raise FileNotFoundError("target_curves.npy not found in the working directory.")
-target_curves = np.load(TARGET_CURVES_PATH)
-
-PROBLEM_TOOLS = Tools(device='cpu');               PROBLEM_TOOLS.compile()
-DIFF_TOOLS    = DifferentiableTools(device='cpu'); DIFF_TOOLS.compile()
+DIFF_TOOLS    = DifferentiableTools(device='cpu')
+DIFF_TOOLS.compile()
 
 
 
@@ -159,9 +157,9 @@ def run_ga_for_curve(curve_idx, target_curve, init_pop):
 
 
 
-# --- 50/50 BFGS, fixed caps (d_cap=0.75, m_cap=10), no penalties, no multi-start ---
 
-# BFGS local refinement (fixed caps, single start, tiny GD fallback)
+
+# BFGS IMPLEMENTATION
 
 
 d_cap = 0.75
@@ -169,16 +167,17 @@ m_cap = 10.0
 
 opt_opts = dict(maxiter=300, gtol=1e-6, disp=False)
 
-# tiny backtracking GD fallback
-fb_step0 = 1e-2
-fb_outer = 10
-fb_bt    = 5
+# backtracking GD fallback
+fb_initial = 1e-2
+fb_iterations = 10
+fb_halvings    = 5
 
 def build_objective(shape, edges, fixed_joints, motor, target_idx, target_curve):
     def fun(z):
         x = z.reshape(shape)
         d, m, gd, gm = DIFF_TOOLS([x], [edges], [fixed_joints], [motor], target_curve, [target_idx])
-        d = float(d[0]); m = float(m[0])
+        d = float(d[0])
+        m = float(m[0])
         if not (np.isfinite(d) and np.isfinite(m)):
             return 1e12, np.zeros_like(z)
 
@@ -209,9 +208,9 @@ def refine_design(x0, edges, fixed_joints, motor, target_idx, target_curve):
     J1 = 0.5*(float(d1[0])/d_cap) + 0.5*(float(m1[0])/m_cap)
 
     if (not np.isfinite(J1)) or (J1 >= J0 - 1e-12):
-        # tiny backtracking GD fallback
+        # backtracking GD fallback
         x_fb = x.copy()
-        for _ in range(fb_outer):
+        for _ in range(fb_iterations):
             J, g = obj(x_fb.reshape(-1))
             if not np.isfinite(J) or not np.all(np.isfinite(g)):
                 break
@@ -219,12 +218,12 @@ def refine_design(x0, edges, fixed_joints, motor, target_idx, target_curve):
             if gnorm <= 0 or not np.isfinite(gnorm):
                 break
 
-            step = fb_step0 / (1e-8 + gnorm)
+            step = fb_initial / (1e-8 + gnorm)
             improved = False
-            for __ in range(fb_bt):
+            for __ in range(fb_halvings):
                 x_trial = x_fb.reshape(-1) - step * g
-                J2, _ = obj(x_trial)
-                # simple Armijo-like check
+                J2, grad= obj(x_trial)
+                # Armijo-like check
                 if np.isfinite(J2) and (J2 < J - 1e-4 * step * gnorm * gnorm):
                     x_fb = x_trial.reshape(shape)
                     improved = True
@@ -304,4 +303,5 @@ for curve_idx in range(6):
 
 
 # Save result
-np.save('submission6.npy', submission)
+np.save('submission7.npy', submission)
+
